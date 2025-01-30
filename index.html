@@ -65,21 +65,22 @@
 
         function generateQuiz() {
             try {
-                quizData = JSON.parse(document.getElementById("quiz-json").value);
-                if (!quizData.questions || !Array.isArray(quizData.questions)) {
-                    throw new Error("Invalid JSON format");
-                }
+                let jsonText = document.getElementById("quiz-json").value;
+                quizData = JSON.parse(jsonText);
+                
+                // Encode JSON into URL hash
+                window.location.hash = encodeURIComponent(jsonText);
 
                 document.getElementById("quiz-title").innerText = quizData.quizname;
                 let quizContent = document.getElementById("quiz-content");
                 quizContent.innerHTML = "";
-                
+
                 quizData.questions.forEach((q, index) => {
                     let questionDiv = document.createElement("div");
                     questionDiv.classList.add("question");
                     questionDiv.innerHTML = `<p>${index + 1}. ${q.question}</p>`;
-                    
-                    if (q.type === "multiple-choice" && q.choices) {
+
+                    if (q.type === "multiple-choice") {
                         q.choices.forEach(choice => {
                             let radioBtn = `<input type="radio" name="q${index}" value="${choice}"> ${choice}<br>`;
                             questionDiv.innerHTML += radioBtn;
@@ -87,9 +88,10 @@
                     } else if (q.type === "written") {
                         questionDiv.innerHTML += `<input type="text" id="q${index}">`;
                     }
-                    
+
                     quizContent.appendChild(questionDiv);
                 });
+
                 document.getElementById("quiz-section").style.display = "block";
             } catch (error) {
                 alert("Invalid JSON format. Please check your input.");
@@ -99,29 +101,40 @@
         function submitQuiz() {
             let score = 0;
             let results = "<h3>Results:</h3>";
-            
             quizData.questions.forEach((q, index) => {
-                let userAnswer = "";
-
+                let userAnswer;
                 if (q.type === "multiple-choice") {
                     let selected = document.querySelector(`input[name='q${index}']:checked`);
-                    userAnswer = selected ? selected.value : "";
+                    if (selected) userAnswer = selected.value;
                 } else if (q.type === "written") {
-                    let inputField = document.getElementById(`q${index}`);
-                    userAnswer = inputField ? inputField.value.trim() : "";
+                    userAnswer = document.getElementById(`q${index}`).value.trim();
                 }
-
-                if (userAnswer.toLowerCase() === q.answer.toLowerCase()) {
-                    score++;
-                    results += `<p style='color: lightgreen;'>✔ ${q.question} - Correct</p>`;
+                if (userAnswer) {
+                    if (userAnswer.toLowerCase() === q.answer.toLowerCase()) {
+                        score++;
+                        results += `<p style='color: lightgreen;'>✔ ${q.question} - Correct</p>`;
+                    } else {
+                        results += `<p style='color: lightcoral;'>✘ ${q.question} - Incorrect (Correct answer: ${q.answer})</p>`;
+                    }
                 } else {
-                    results += `<p style='color: lightcoral;'>✘ ${q.question} - Incorrect (Correct answer: ${q.answer})</p>`;
+                    results += `<p style='color: lightcoral;'>✘ ${q.question} - No answer provided (Correct answer: ${q.answer})</p>`;
                 }
             });
-
             results += `<h3>Your score: ${score} out of ${quizData.questions.length}</h3>`;
             document.getElementById("quiz-results").innerHTML = results;
         }
+
+        // Auto-load quiz from URL hash
+        function loadQuizFromHash() {
+            if (window.location.hash) {
+                let jsonText = decodeURIComponent(window.location.hash.substring(1));
+                document.getElementById("quiz-json").value = jsonText;
+                generateQuiz();
+            }
+        }
+
+        // Run on page load
+        window.onload = loadQuizFromHash;
     </script>
 </body>
 </html>
