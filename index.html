@@ -17,6 +17,7 @@
     <div id="quiz-section" style="display:none;">
         <div id="quiz-content"></div>
         <button onclick="checkAnswers()">Submit Quiz</button>
+        <div id="quiz-results"></div>
     </div>
 
     <script>
@@ -69,9 +70,11 @@
 
         function checkAnswers() {
             let correctAnswers = 0;
+            let resultsHTML = "<h3>Quiz Results</h3>";
 
             quizData.questions.forEach((q, index) => {
                 let userAnswer = "";
+                let correct = false;
 
                 // Get user answer based on question type
                 if (q.type === "multiple-choice") {
@@ -86,11 +89,20 @@
                 // Check if the answer is correct
                 if (userAnswer.toLowerCase() === q.correctAnswer.toLowerCase()) {
                     correctAnswers++;
+                    correct = true;
                 }
+
+                // Show feedback
+                resultsHTML += `<p>${index + 1}. ${q.question} <br>
+                Your answer: <strong>${userAnswer || "No answer"}</strong> <br>
+                ${correct ? "<span style='color:green;'>✅ Correct!</span>" : `<span style='color:red;'>❌ Incorrect. Correct answer: <strong>${q.correctAnswer}</strong></span>`}
+                </p>`;
             });
 
-            // Display the results
-            alert(`You got ${correctAnswers} out of ${quizData.questions.length} correct!`);
+            resultsHTML += `<h3>You got ${correctAnswers} out of ${quizData.questions.length} correct!</h3>`;
+
+            // Display results below the quiz
+            document.getElementById("quiz-results").innerHTML = resultsHTML;
         }
     </script>
 
