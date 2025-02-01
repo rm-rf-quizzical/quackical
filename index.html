@@ -4,16 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e2e;
+            color: white;
+            text-align: center;
+        }
+        .quiz-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: #282a36;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+        }
+        .question {
+            margin: 15px 0;
+        }
+        input[type="text"], textarea {
+            width: 80%;
+            padding: 8px;
+            margin-top: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+        button {
+            background-color: #ff5555;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #ff4444;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
 </head>
 <body>
-
-
-
-    <div id="quiz-section" style="display:none;">
-        <div id="quiz-content"></div>
-        <button onclick="checkAnswers()">Submit Quiz</button>
+    <div class="quiz-container">
+        <h2>Paste Quiz JSON Below</h2>
+        <textarea id="quiz-json" rows="6" placeholder='{"quizname": "Sample Quiz", "questions": [...]}'></textarea>
+        <button onclick="generateQuiz()">Generate Quiz</button>
     </div>
-
+    <div class="quiz-container" id="quiz-section" style="display:none;">
+        <h2 id="quiz-title"></h2>
+        <div id="quiz-content"></div>
+        <button onclick="submitQuiz()">Submit</button>
+        <div id="quiz-results" class="result"></div>
+    </div>
+    
     <script>
         let quizData = {};
 
@@ -22,7 +68,7 @@
                 let jsonText = document.getElementById("quiz-json").value;
                 quizData = JSON.parse(jsonText);
                 
-                // ✅ Auto-encode JSON into URL hash
+                // Encode JSON into URL hash
                 window.location.hash = encodeURIComponent(jsonText);
 
                 document.getElementById("quiz-title").innerText = quizData.quizname;
@@ -52,7 +98,33 @@
             }
         }
 
-        // ✅ Fix: Automatically decode JSON from URL on load
+        function submitQuiz() {
+            let score = 0;
+            let results = "<h3>Results:</h3>";
+            quizData.questions.forEach((q, index) => {
+                let userAnswer;
+                if (q.type === "multiple-choice") {
+                    let selected = document.querySelector(`input[name='q${index}']:checked`);
+                    if (selected) userAnswer = selected.value;
+                } else if (q.type === "written") {
+                    userAnswer = document.getElementById(`q${index}`).value.trim();
+                }
+                if (userAnswer) {
+                    if (userAnswer.toLowerCase() === q.answer.toLowerCase()) {
+                        score++;
+                        results += `<p style='color: lightgreen;'>✔ ${q.question} - Correct</p>`;
+                    } else {
+                        results += `<p style='color: lightcoral;'>✘ ${q.question} - Incorrect (Correct answer: ${q.answer})</p>`;
+                    }
+                } else {
+                    results += `<p style='color: lightcoral;'>✘ ${q.question} - No answer provided (Correct answer: ${q.answer})</p>`;
+                }
+            });
+            results += `<h3>Your score: ${score} out of ${quizData.questions.length}</h3>`;
+            document.getElementById("quiz-results").innerHTML = results;
+        }
+
+        // Auto-load quiz from URL hash
         function loadQuizFromHash() {
             if (window.location.hash) {
                 let jsonText = decodeURIComponent(window.location.hash.substring(1));
@@ -60,34 +132,9 @@
                 generateQuiz();
             }
         }
+
+        // Run on page load
         window.onload = loadQuizFromHash;
-
-        function checkAnswers() {
-            let correctAnswers = 0;
-
-            quizData.questions.forEach((q, index) => {
-                let userAnswer = "";
-
-                // Get user answer based on question type
-                if (q.type === "multiple-choice") {
-                    let selectedOption = document.querySelector(`input[name="q${index}"]:checked`);
-                    if (selectedOption) {
-                        userAnswer = selectedOption.value;
-                    }
-                } else if (q.type === "written") {
-                    userAnswer = document.getElementById(`q${index}`).value.trim();
-                }
-
-                // Check if the answer is correct
-                if (userAnswer.toLowerCase() === q.correctAnswer.toLowerCase()) {
-                    correctAnswers++;
-                }
-            });
-
-            // Display the results
-            alert(`You got ${correctAnswers} out of ${quizData.questions.length} correct!`);
-        }
     </script>
-
 </body>
 </html>
